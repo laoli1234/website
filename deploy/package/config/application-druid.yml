@@ -1,0 +1,10 @@
+# 本文件由部署包预先写好，不需要修改。
+# 实际连接信息来自 config/connection.conf。
+
+spring:
+    datasource:
+        druid:
+            master:
+                url: "jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:ry-vue}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8"
+                username: ${DB_USER:website}
+                password: '${DB_PASSWORD:}'

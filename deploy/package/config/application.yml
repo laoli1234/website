@@ -1,0 +1,10 @@
+# 本文件由部署包预先写好，不需要修改。
+# 实际连接信息来自 config/connection.conf。
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      database: 0
+      password: '${REDIS_PASSWORD:}'

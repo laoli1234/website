@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>负载均衡测试</title>
+  <style>
+    :root {
+      --bg: #060b14;
+      --panel: #0b1524;
+      --line: rgba(146, 191, 232, 0.16);
+      --text: #e8f0f9;
+      --muted: #8ca0b8;
+      --accent: #35e3c8;
+      --danger: #fb7185;
+      --mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+      --serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 0%, rgba(53, 227, 200, 0.08), transparent 55%), var(--bg);
+      color: var(--text);
+      font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 22px 32px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(53, 227, 200, 0.55);
+      color: var(--accent);
+      font-family: var(--serif);
+      font-size: 17px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+    }
+
+    header p {
+      margin: 1px 0 0;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    header nav {
+      margin-left: auto;
+      display: flex;
+      gap: 18px;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .card {
+      width: min(680px, 100%);
+      padding: 54px 40px 40px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(146, 191, 232, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(146, 191, 232, 0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+      pointer-events: none;
+    }
+
+    .card > * { position: relative; }
+
+    .label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.26em;
+      color: var(--muted);
+    }
+
+    .backend {
+      margin: 18px 0 10px;
+      font-family: var(--mono);
+      font-size: clamp(20px, 4.6vw, 40px);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      color: var(--accent);
+      word-break: break-all;
+      transition: color 0.25s ease;
+    }
+
+    .instance {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      word-break: break-all;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 38px 0 30px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .meta div { display: flex; flex-direction: column; gap: 5px; }
+
+    .meta span {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .meta strong {
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--mono);
+      word-break: break-all;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 11px 24px;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      letter-spacing: 0.06em;
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    }
+
+    button:hover { border-color: var(--accent); color: var(--accent); }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #04121a;
+      font-weight: 600;
+    }
+
+    button.primary:hover { background: #5df0da; color: #04121a; }
+
+    .hint {
+      margin-top: 26px;
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--muted);
+    }
+
+    .hint b { color: #cfe0f0; font-weight: 500; }
+
+    .error {
+      margin-top: 18px;
+      padding: 10px 14px;
+      border: 1px solid rgba(251, 113, 133, 0.45);
+      background: rgba(251, 113, 133, 0.08);
+      color: #fda4af;
+      font-size: 12.5px;
+      display: none;
+    }
+
+    .error.show { display: block; }
+
+    footer {
+      padding: 16px 32px 22px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.14em;
+      color: rgba(140, 160, 184, 0.55);
+    }
+
+    @media (max-width: 620px) {
+      .card { padding: 40px 22px 32px; }
+      .meta { grid-template-columns: 1fr; gap: 12px; }
+      header { padding: 16px 18px; }
+      header nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="mark">联</div>
+    <div>
+      <h1>负载均衡测试</h1>
+      <p>LOAD BALANCER TEST</p>
+    </div>
+    <nav>
+      <a href="/portal">企业官网</a>
+      <a href="/rewrite-lab.html">Rewrite 演示台</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="label">THIS REQUEST WAS HANDLED BY</div>
+      <div class="backend" id="backend">正在请求…</div>
+      <div class="instance" id="instance">-</div>
+
+      <div class="meta">
+        <div><span>SERVER TIME</span><strong id="time">-</strong></div>
+        <div><span>HOSTNAME</span><strong id="host">-</strong></div>
+        <div><span>该节点累计请求</span><strong id="count">-</strong></div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="btnRefresh">再请求一次</button>
+        <button id="btnAuto">自动刷新：关闭</button>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <p class="hint">
+        每次打开或刷新本页，都会重新请求一次后端。<br />
+        如果始终显示同一台，请检查 Nginx <b>upstream</b> 是否包含两台后端、是否重启过 Nginx。
+      </p>
+    </section>
+  </main>
+
+  <footer>接口 GET /lb/info · 经 Nginx /prod-api 或 Vite /dev-api 代理</footer>
+
+  <script>
+    const apiBase = location.port === '5173' ? '/dev-api' : '/prod-api'
+    const $ = id => document.getElementById(id)
+    const colors = ['#35e3c8', '#f5b544', '#6ea8fe', '#c084fc', '#fb7185']
+    let timer = null
+
+    // 实例标识 = 主机名:端口，直接展示，便于确认是哪台机器哪个进程
+    function colorOf(id) {
+      let hash = 0
+      for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+      return colors[hash % colors.length]
+    }
+
+    async function load() {
+      const started = performance.now()
+      $('error').classList.remove('show')
+      try {
+        const res = await fetch(apiBase + '/lb/info', { cache: 'no-store' })
+        if (!res.ok) throw new Error('HTTP ' + res.status)
+        const data = await res.json()
+        const id = data.instanceId || 'unknown'
+
+        $('backend').textContent = id
+        $('backend').style.color = colorOf(id)
+        $('instance').textContent = (data.ip || '-') + ':' + (data.port || '-')
+        $('time').textContent = data.serverTime || '-'
+        $('host').textContent = data.hostname || '-'
+        $('count').textContent = data.requestCount != null ? data.requestCount + ' 次' : '-'
+      } catch (err) {
+        $('backend').textContent = '请求失败'
+        $('backend').style.color = 'var(--danger)'
+        $('instance').textContent = '-'
+        $('error').textContent = '无法连接后端：' + err.message + '。请确认后端已启动，并通过 Nginx 或 Vite 代理访问。'
+        $('error').classList.add('show')
+      }
+    }
+
+    function toggleAuto() {
+      const btn = $('btnAuto')
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+        btn.textContent = '自动刷新：关闭'
+      } else {
+        timer = setInterval(load, 2000)
+        btn.textContent = '自动刷新：2 秒'
+        load()
+      }
+    }
+
+    $('btnRefresh').addEventListener('click', load)
+    $('btnAuto').addEventListener('click', toggleAuto)
+
+    load()
+  </script>
+</body>
+</html>
