@@ -213,9 +213,18 @@ if (-not $SkipFrontend) {
     Push-Location (Join-Path $RepoRoot "ruoyi-ui")
     try {
         if (-not $SkipNpmInstall) {
-            & $NpmExe install --no-audit --no-fund
-            if ($LASTEXITCODE -ne 0) {
-                Fail "npm install 失败，退出码 $LASTEXITCODE。"
+            # 有锁文件时用 npm ci，确保依赖版本与实验包构建时一致
+            $LockFile = Join-Path $RepoRoot "ruoyi-ui\package-lock.json"
+            if (Test-Path $LockFile) {
+                & $NpmExe ci --no-audit --no-fund
+                if ($LASTEXITCODE -ne 0) {
+                    Fail "npm ci 失败，退出码 $LASTEXITCODE。"
+                }
+            } else {
+                & $NpmExe install --no-audit --no-fund
+                if ($LASTEXITCODE -ne 0) {
+                    Fail "npm install 失败，退出码 $LASTEXITCODE。"
+                }
             }
         }
         & $NpmExe run build:prod

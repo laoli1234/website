@@ -121,7 +121,12 @@ if [[ "$SKIP_FRONTEND" -eq 0 ]]; then
   (
     cd "$REPO_ROOT/ruoyi-ui"
     if [[ "$SKIP_NPM_INSTALL" -eq 0 ]]; then
-      npm install --no-audit --no-fund
+      # 有锁文件时用 npm ci，确保依赖版本与实验包构建时一致
+      if [[ -f "$REPO_ROOT/ruoyi-ui/package-lock.json" ]]; then
+        npm ci --no-audit --no-fund
+      else
+        npm install --no-audit --no-fund
+      fi
     fi
     npm run build:prod
   ) || fail "前端构建失败。"

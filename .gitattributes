@@ -8,11 +8,13 @@
 *.conf    text eol=lf
 *.service text eol=lf
 *.sql     text eol=lf
+# 实验包中的 quartz.sql 是 CRLF，保持检出结果与参考包一致
+sql/quartz.sql text eol=crlf
 *.yml     text eol=lf
 *.yaml    text eol=lf
 *.md      text eol=lf
 
-# 前端源码、静态页和资源统一 LF，保证 Windows 与 Linux 打出的前端一致
+# 前端静态页和资源统一 LF
 *.html    text eol=lf
 *.css     text eol=lf
 *.scss    text eol=lf
@@ -22,6 +24,28 @@
 *.vue     text eol=lf
 *.svg     text eol=lf
 *.ts      text eol=lf
+
+# 前端构建输入保持实验包构建时的换行符。
+# Vite/Rollup 的产物哈希对源码换行符敏感，参考包是用 CRLF 源码构建的；
+# 这里显式指定，保证 Windows 与 Linux 检出后打出的前端都与参考包一致。
+ruoyi-ui/index.html       text eol=crlf
+ruoyi-ui/vite.config.js   text eol=crlf
+ruoyi-ui/package.json     text eol=crlf
+ruoyi-ui/.env.*           text eol=crlf
+ruoyi-ui/src/**           text eol=crlf
+ruoyi-ui/vite/**          text eol=crlf
+
+# 以下文件在参考构建中为 LF，必须保持 LF，否则产物哈希同样会变化
+ruoyi-ui/src/assets/icons/svg/**               text eol=lf
+ruoyi-ui/src/assets/icons/svg/monitor.svg      text eol=crlf
+ruoyi-ui/src/assets/icons/svg/redis-list.svg   text eol=crlf
+ruoyi-ui/src/assets/icons/svg/system.svg       text eol=crlf
+ruoyi-ui/src/utils/generator/icon.json         text eol=lf
+ruoyi-ui/src/views/index.vue                   text eol=lf
+ruoyi-ui/src/views/portal/index.vue            text eol=lf
+
+# 公开页面在参考包中为 LF
+ruoyi-ui/public/**        text eol=lf
 
 # Windows 脚本保留 CRLF（PowerShell 5.1 也能读 LF，但 CRLF 更稳妥）
 *.ps1     text eol=crlf

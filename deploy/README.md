@@ -48,6 +48,8 @@ bash deploy/build-package.sh --skip-frontend
 PowerShell 对应参数为 `-RunTests`、`-SkipFrontend`、`-SkipNpmInstall`。
 
 > 首次构建需要联网下载 Maven / npm 依赖，时间较长。
+> 前端依赖由 `ruoyi-ui/package-lock.json` 锁定，打包脚本会优先执行 `npm ci`；
+> 仓库的 `.gitattributes` 固定了前端构建源码的换行符，保证不同平台打出的前端与实验包一致。
 
 ## 三、产物
 
