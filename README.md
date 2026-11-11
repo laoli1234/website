@@ -38,6 +38,13 @@
 
 > 门户中的企业名称、Logo、新闻、地址、邮箱、备案号等均为 **演示数据**，与任何真实企业无关。正式使用前请替换为自己的品牌与联系方式。
 
+## 两种运行方式（先看这里）
+
+| 使用方式 | 配置入口 | 说明 |
+| --- | --- | --- |
+| **按《课题4》实验手册部署** | `website-package/config/connection.conf` | 打包后上传 `website-package.zip`；在实验机上只修改 `connection.conf`，`start.sh` / systemd 会自动注入数据库和 Redis 连接信息。**不需要设置下面的环境变量。** |
+| **从源码直接运行 / 开发** | 环境变量 | 执行 `mvn package` 后 `java -jar`，或在 IDE 中启动；按“快速开始”第 3 节设置 `DB_*`、`REDIS_*` 等环境变量。 |
+
 ## 功能概览
 
 ### 前台门户
@@ -95,7 +102,9 @@
 └── pom.xml               # Maven 聚合工程
 ```
 
-## 快速开始
+## 快速开始（从源码直接运行）
+
+> 如果你要按《课题4》实验手册部署，请直接看下文“打包为实验部署包（课题4）”，不需要在这里设置环境变量。
 
 ### 1. 环境要求
 
@@ -124,7 +133,9 @@ mysql -u root -p ry-vue < sql/quartz.sql
 >
 > 如果是已经导入过基础脚本的存量库，只需执行 `sql/portal-branding.sql` 更新门户品牌信息。
 
-### 3. 配置环境变量（重要）
+### 3. 配置环境变量（仅源码直接运行时）
+
+> **实验部署不需要本节。** 使用 `website-package.zip` 时，`start.sh` 和 `systemd/website.service` 会读取 `/opt/website/config/connection.conf` 并自动注入这些变量；你只需要按实验手册修改 `connection.conf`。下面的环境变量仅用于直接从源码或 IDE 启动后端。
 
 仓库中的数据库、Redis、JWT、Druid 配置均使用环境变量占位，**不包含任何真实密码**。启动前请设置：
 
@@ -178,7 +189,9 @@ export RUOYI_PROFILE='./uploadPath'
 
 > 不要把真实密码写入 `application*.yml`、`.env` 或任何会被提交的文件。建议使用 IDE 运行配置、系统环境变量、Docker Secrets 或配置中心管理。
 
-### 4. 启动后端
+### 4. 启动后端（源码直接运行）
+
+> 实验部署请使用打包后的 `website-package.zip`，见下文“打包为实验部署包（课题4）”。
 
 方式一：命令行打包运行
 
@@ -228,6 +241,8 @@ npm run build:prod
 
 如果要把源码交给别人，按《课题4-大型网站》实验手册部署，请先在**打包机**上生成
 `website-package.zip`。实验虚拟机不需要安装 Maven、Node.js。
+
+> 实验部署的配置入口只有 `config/connection.conf`：`start.sh` / systemd 会自动加载它并注入 `DB_*`、`REDIS_*`。不需要在实验机上设置环境变量，也不需要安装 Maven、Node.js。
 
 ### Windows（PowerShell）
 
@@ -284,7 +299,7 @@ dist/
 
 ## 配置与安全说明
 
-1. **已脱敏**：数据库地址/账号/密码、Redis 地址/密码、JWT 密钥、Druid 控制台账号密码均通过环境变量注入，仓库中不保存真实值。
+1. **已脱敏**：数据库地址/账号/密码、Redis 地址/密码、JWT 密钥、Druid 控制台账号密码均通过环境变量占位，仓库中不保存真实值。实验部署时由 `config/connection.conf` 注入数据库/Redis 值；源码直接运行时通过环境变量设置。
 2. **Druid 监控台默认关闭**：如确需启用，请设置 `DRUID_STAT_ENABLED=true`，同时修改 `DRUID_USERNAME` / `DRUID_PASSWORD`，并保持 `DRUID_ALLOW` 为可信 IP。
 3. **JWT 密钥**：`TOKEN_SECRET` 必须替换为随机长字符串（建议 32 位以上），不要在多个环境复用。
 4. **默认密码**：`admin/admin123` 与初始密码 `123456` 仅用于首次初始化，部署后请立即修改。
