@@ -34,16 +34,9 @@
 
 - **前台门户**：企业形象展示、业务介绍、新闻动态、联系方式等。
 - **后台管理**：沿用 RuoYi 的 RBAC 权限体系，提供用户、部门、角色、菜单、字典、参数、公告、日志、定时任务、代码生成和系统监控等能力。
-- **运维演示页**：内置负载均衡测试页与 Nginx rewrite 教学演示页，便于验证多实例部署和反向代理规则。
+- **运维演示页**：内置负载均衡测试页与 Nginx rewrite 演示页，便于验证多实例与反向代理场景。
 
 > 门户中的企业名称、Logo、新闻、地址、邮箱、备案号等均为 **演示数据**，与任何真实企业无关。正式使用前请替换为自己的品牌与联系方式。
-
-## 两种运行方式（先看这里）
-
-| 使用方式 | 配置入口 | 说明 |
-| --- | --- | --- |
-| **按《课题4》实验手册部署** | `website-package/config/connection.conf` | 打包后上传 `website-package.zip`；在实验机上只修改 `connection.conf`，`start.sh` / systemd 会自动注入数据库和 Redis 连接信息。**不需要设置下面的环境变量。** |
-| **从源码直接运行 / 开发** | 环境变量 | 执行 `mvn package` 后 `java -jar`，或在 IDE 中启动；按“快速开始”第 3 节设置 `DB_*`、`REDIS_*` 等环境变量。 |
 
 ## 功能概览
 
@@ -74,7 +67,6 @@
 | 缓存 | Redis 6.0+ |
 | 前端 | Vue 3.5、Vite 6、Element Plus 2.13、Pinia 3、Vue Router 4、Axios |
 | 构建 | Maven 3.8+、Node.js 20 LTS（建议） |
-| 部署 | Nginx 反向代理、可选的 Tomcat 多实例 + upstream 负载均衡 |
 
 ## 项目结构
 
@@ -90,21 +82,12 @@
 │   ├── public/           # 静态页面（门户演示页、rewrite 演示页等）
 │   └── src/              # 前端源码
 ├── sql/                  # 数据库初始化脚本
-├── deploy/               # 实验部署包构建、Nginx 配置、安装脚本
-│   ├── package/          # website-package.zip 的模板（config、systemd、启停脚本）
-│   ├── nginx/            # 00-upstream.conf、portal.conf 及单机开发配置
-│   ├── 03-backend/       # 01-website-install.sh
-│   ├── 01-database/      # 05-mysql-init-website-db.sh
-│   ├── build-package.ps1 # Windows 一键打包
-│   └── build-package.sh  # Linux/macOS 一键打包
 ├── bin/                  # Windows 构建/运行脚本
 ├── ry.bat / ry.sh        # 后端启动、停止、重启脚本
 └── pom.xml               # Maven 聚合工程
 ```
 
-## 快速开始（从源码直接运行）
-
-> 如果你要按《课题4》实验手册部署，请直接看下文“打包为实验部署包（课题4）”，不需要在这里设置环境变量。
+## 快速开始
 
 ### 1. 环境要求
 
@@ -133,9 +116,7 @@ mysql -u root -p ry-vue < sql/quartz.sql
 >
 > 如果是已经导入过基础脚本的存量库，只需执行 `sql/portal-branding.sql` 更新门户品牌信息。
 
-### 3. 配置环境变量（仅源码直接运行时）
-
-> **实验部署不需要本节。** 使用 `website-package.zip` 时，`start.sh` 和 `systemd/website.service` 会读取 `/opt/website/config/connection.conf` 并自动注入这些变量；你只需要按实验手册修改 `connection.conf`。下面的环境变量仅用于直接从源码或 IDE 启动后端。
+### 3. 配置环境变量（重要）
 
 仓库中的数据库、Redis、JWT、Druid 配置均使用环境变量占位，**不包含任何真实密码**。启动前请设置：
 
@@ -189,9 +170,7 @@ export RUOYI_PROFILE='./uploadPath'
 
 > 不要把真实密码写入 `application*.yml`、`.env` 或任何会被提交的文件。建议使用 IDE 运行配置、系统环境变量、Docker Secrets 或配置中心管理。
 
-### 4. 启动后端（源码直接运行）
-
-> 实验部署请使用打包后的 `website-package.zip`，见下文“打包为实验部署包（课题4）”。
+### 4. 启动后端
 
 方式一：命令行打包运行
 
@@ -237,115 +216,14 @@ npm run build:prod
 
 > ⚠️ 首次登录后请立即修改 `admin` 密码，并在「系统管理 → 参数管理」中修改 `sys.user.initPassword`（默认 `123456`），避免使用默认凭据上线。
 
-## 打包为实验部署包（课题4）
-
-如果要把源码交给别人，按《课题4-大型网站》实验手册部署，请先在**打包机**上生成
-`website-package.zip`。实验虚拟机不需要安装 Maven、Node.js。
-
-> 实验部署的配置入口只有 `config/connection.conf`：`start.sh` / systemd 会自动加载它并注入 `DB_*`、`REDIS_*`。不需要在实验机上设置环境变量，也不需要安装 Maven、Node.js。
-
-### Windows（PowerShell）
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\build-package.ps1
-```
-
-Maven 不在 `PATH` 时，用 `-Maven` 指定：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy\build-package.ps1 `
-  -Maven "C:\apache-maven-3.9.9\bin\mvn.cmd"
-```
-
-### Linux / macOS / Git Bash
-
-```bash
-bash deploy/build-package.sh
-```
-
-### 产物
-
-```text
-dist/
-├── website-package.zip          ← 上传到 /opt/packages/website-package.zip
-└── website-package/
-    ├── website.jar
-    ├── website-frontend.zip
-    ├── start.sh / stop.sh / check.sh
-    ├── config/connection.conf
-    ├── config/application.yml
-    ├── config/application-druid.yml
-    ├── sql/ry_20260417.sql
-    ├── sql/quartz.sql
-    ├── systemd/website.service
-    └── README-部署说明.md
-```
-
-打包脚本会自动检查压缩包顶层目录是否为 `website-package/`，并校验实验手册需要的
-所有文件都存在。部署时只需把 `dist/website-package.zip` 上传到
-`/opt/packages/`，然后按 03、04 手册执行；手册中的文件名、路径和
-`config/connection.conf` 读取方式都**不需要修改**。
-
-实验手册另外需要的文件已放在仓库中：
-
-| 实验手册中的文件 | 仓库位置 |
-| --- | --- |
-| `03-backend/01-website-install.sh` | `deploy/03-backend/01-website-install.sh` |
-| `01-database/05-mysql-init-website-db.sh` | `deploy/01-database/05-mysql-init-website-db.sh` |
-| `/etc/nginx/conf.d/00-upstream.conf` | `deploy/nginx/00-upstream.conf` |
-| `/etc/nginx/conf.d/portal.conf` | `deploy/nginx/portal.conf` |
-
-更详细的打包说明见 [`deploy/README.md`](deploy/README.md)。
-
 ## 配置与安全说明
 
-1. **已脱敏**：数据库地址/账号/密码、Redis 地址/密码、JWT 密钥、Druid 控制台账号密码均通过环境变量占位，仓库中不保存真实值。实验部署时由 `config/connection.conf` 注入数据库/Redis 值；源码直接运行时通过环境变量设置。
+1. **已脱敏**：数据库地址/账号/密码、Redis 地址/密码、JWT 密钥、Druid 控制台账号密码均通过环境变量占位，仓库中不保存真实值。
 2. **Druid 监控台默认关闭**：如确需启用，请设置 `DRUID_STAT_ENABLED=true`，同时修改 `DRUID_USERNAME` / `DRUID_PASSWORD`，并保持 `DRUID_ALLOW` 为可信 IP。
 3. **JWT 密钥**：`TOKEN_SECRET` 必须替换为随机长字符串（建议 32 位以上），不要在多个环境复用。
 4. **默认密码**：`admin/admin123` 与初始密码 `123456` 仅用于首次初始化，部署后请立即修改。
 5. **演示数据**：门户中的企业名称、新闻、地址、邮箱、备案号等均为示例内容，请替换后再对外发布。
-6. **生产环境**：建议通过 Nginx 配置 HTTPS，限制后端与 Redis 的公网访问，并定期备份数据库。
-
-## Nginx 部署参考
-
-如果按《课题4》实验手册部署 **两台后端 + lb-nginx-01**，请直接使用
-[`deploy/nginx/00-upstream.conf`](deploy/nginx/00-upstream.conf) 和
-[`deploy/nginx/portal.conf`](deploy/nginx/portal.conf)，它们包含 HTTPS、`/prod-api/`
-轮询、`/profile/` 代理和 rewrite 演示规则。
-
-下面是单机部署的最小示例：前端构建后，将 `ruoyi-ui/dist/` 部署到 Nginx 静态目录，
-后端保持 `127.0.0.1:8080` 监听：
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    root /opt/website-ui;
-    index index.html;
-    client_max_body_size 20m;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /prod-api/ {
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_pass http://127.0.0.1:8080/;
-    }
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf)$ {
-        expires 7d;
-        add_header Cache-Control "public, max-age=604800";
-        try_files $uri =404;
-    }
-}
-```
-
-多实例部署时，可使用 Nginx `upstream` 将请求分发到多个后端实例，并通过 `/lb-lab.html` 查看当前响应实例。
+6. **生产环境**：建议启用 HTTPS，限制后端与 Redis 的公网访问，并定期备份数据库。
 
 ## 与 RuoYi 的关系
 

@@ -19,6 +19,6 @@ selenium-debug.log
 *.sln
 *.local
 
-# 锁定前端依赖版本，保证任何人打出的前端与实验包一致
+# 锁定前端依赖版本，保证构建结果可复现
 # package-lock.json
 yarn.lock
